@@ -3,5 +3,5 @@ export LOGI_PASS="my_password"
 
 export DEBUG="dsd"
 
-node daily-summary-downloader.js
+node downloader.js
 

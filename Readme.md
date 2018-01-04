@@ -8,8 +8,3 @@ Installation:
 1. Create `start.sh`, using `start.example.sh` as a template
 3. `chmod +x start.sh`
 4. `./start`
-
-Caveats:
-
-* Looks like it has to be run twice. Generating the video must take longer than 30 seconds?
-* Puppeteer can't seem to launch Chrome headless out-of-the-box on raspberry pi zero w. Hmm.
