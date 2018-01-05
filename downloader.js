@@ -1,14 +1,11 @@
 const debug = require('debug')('dsd');
 const fs = require('fs');
 const fetch = require('node-fetch');
+const low = require('lowdb')
+const FileAsync = require('lowdb/adapters/FileAsync')
+const path = require('path');
 
-
-const run = async() => {
-    const user = {
-        email: process.env.LOGI_EMAIL,
-        password: process.env.LOGI_PASS
-    };
-
+const authorize = async (user) => {
     let authResponse = await fetch('https://video.logi.com/api/accounts/authorization', {
         method: 'POST',
         headers: {
@@ -20,8 +17,11 @@ const run = async() => {
 
     let cookie = authResponse.headers.get('set-cookie');
     let sessionCookie = cookie.match(/prod_session=[^;]+/)[0];
+    return sessionCookie;
+};
 
-    var accessories = await fetch('https://video.logi.com/api/accessories', {
+const get_accessories = async (sessionCookie) => {
+    return await fetch('https://video.logi.com/api/accessories', {
         headers: {
             'Accept': 'application/json, text/plain, */*',
             'Content-Type': 'application/json',
@@ -29,42 +29,88 @@ const run = async() => {
         }
     })
     .then(response => response.json());
+};
+
+const get_activities = async (accessory, sessionCookie) => {
+
+    let activitiesResponse = await fetch(`https://video.logi.com/api/accessories/${accessory.accessoryId}/activities`, 
+    {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Content-Type': 'application/json',
+            'Cookie': sessionCookie
+        },
+        body: JSON.stringify({
+            "extraFields": [
+                "activitySet"
+            ],
+            "operator": "<=",
+            "limit": 80,
+            "scanDirectionNewer": true,
+            "filter": "relevanceLevel = 0 OR relevanceLevel >= 1"
+        })
+    }).then(response => response.json());
+
+    return activitiesResponse.activities;
+};
+
+const download_activity = async(accessory, activity, sessionCookie) => {
+    let url = `https://video.logi.com/api/accessories/${accessory.accessoryId}/activities/${activity.activityId}/mp4`;
+    debug(`downloading ${url}`);
+
+    return await fetch(url, {
+        headers: {
+            'Cookie': sessionCookie
+        }
+    }).then(response => {
+        let contentDisposition = response.headers.get('content-disposition');
+        let filename = contentDisposition.match(/filename=([^;]+)/)[1];
+        return [filename, response.body];
+    });
+};
+
+const save_stream = async(filepath, stream) => {
+    stream.pipe(fs.createWriteStream(filepath)).on('close', () => {
+        debug('saved', filepath);
+    });
+};
+
+const run = async() => {
+    const user = {
+        email: process.env.LOGI_EMAIL,
+        password: process.env.LOGI_PASS
+    };
+
+    const download_directory = process.env.DOWNLOAD_DIRECTORY;
+    const db = await low(new FileAsync('db.json'));
+
+    await db.defaults({ downloadedActivities: [] }).write()
+
+    let sessionCookie = await authorize(user);
+
+    let accessories = await get_accessories(sessionCookie);
 
     for(accessory of accessories) {
-        var activitiesResponse = await fetch(`https://video.logi.com/api/accessories/${accessory.accessoryId}/activities`, 
-        {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json, text/plain, */*',
-                'Content-Type': 'application/json',
-                'Cookie': sessionCookie
-            },
-            body: JSON.stringify({
-                "extraFields": [
-                    "activitySet"
-                ],
-                "operator": "<=",
-                "limit": 80,
-                "scanDirectionNewer": true,
-                "filter": "relevanceLevel = 0 OR relevanceLevel >= 1"
-            })
-        }).then(response => response.json());
 
-        for(activity of activitiesResponse.activities) {
-            let url = `https://video.logi.com/api/accessories/${accessory.accessoryId}/activities/${activity.activityId}/mp4`;
-            debug(`downloading ${url}`);
-            await fetch(url, {
-                headers: {
-                    'Cookie': cookie
-                }
-            }).then(response => {
-                let contentDisposition = response.headers.get('content-disposition');
-                let filename = contentDisposition.match(/filename=([^;]+)/)[1];
-                response.body.pipe(fs.createWriteStream('downloads/' + filename)).on('close', () => {
-                    debug('saved', filename);
-                });
-            });
+        let activities = await get_activities(accessory, sessionCookie);
+        
+        for(activity of activities) {
+
+            let found = db.get('downloadedActivities').indexOf(activity.activityId) > -1;
+
+            if(!found) {
+
+                let [filename, stream] = await download_activity(accessory, activity, sessionCookie);
+                let filepath = path.join(download_directory, filename);
+                save_stream(filepath, stream);
+                db.get('downloadedActivities').push(activity.activityId).write();
+
+            }
+            
+
         }
+
     }
     
 };
