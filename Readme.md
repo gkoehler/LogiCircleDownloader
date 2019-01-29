@@ -1,6 +1,7 @@
 # LogiCircleDownloader
 
-Usage: Tired of using circle.logi.com to see your clips? Want to keep a local archive, but don't want to pay for a cloud storage subscription? Call this script to download your "day brief" video from the command line.  
+Usage: Tired of using circle.logi.com to see your clips? Want to keep a local archive, but don't want to pay for a cloud storage subscription? Call this script to download the individual clips from the command line.
+
 Installation:
 
 1. Create a "downloads" subdirectory to hold the downloaded videos
