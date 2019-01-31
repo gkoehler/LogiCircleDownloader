@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const low = require('lowdb')
 const FileAsync = require('lowdb/adapters/FileAsync')
 const path = require('path');
+const { exec } = require('child_process');
 
 const authorize = async (user) => {
     let authResponse = await fetch('https://video.logi.com/api/accounts/authorization', {
@@ -57,7 +58,7 @@ const get_activities = async (accessory, sessionCookie) => {
 
 const download_activity = async(accessory, activity, sessionCookie) => {
     let url = `https://video.logi.com/api/accessories/${accessory.accessoryId}/activities/${activity.activityId}/mp4`;
-    debug(`downloading ${url}`);
+    //debug(`downloading ${url}`);
 
     return await fetch(url, {
         headers: {
@@ -76,6 +77,13 @@ const save_stream = async(filepath, stream) => {
     });
 };
 
+const combinePath = function(folder, subFolder) {
+	let dir = path.join(folder, subFolder);
+	if (!fs.existsSync(dir))
+		 fs.mkdirSync(dir);
+	return dir;
+}
+
 const run = async() => {
     const user = {
         email: process.env.LOGI_EMAIL,
@@ -92,23 +100,42 @@ const run = async() => {
     let accessories = await get_accessories(sessionCookie);
 
     for(accessory of accessories) {
-
+		
         let activities = await get_activities(accessory, sessionCookie);
         
         for(activity of activities) {
-
             let found = db.get('downloadedActivities').indexOf(activity.activityId) > -1;
-
+			
             if(!found) {
-
                 let [filename, stream] = await download_activity(accessory, activity, sessionCookie);
-                let filepath = path.join(download_directory, filename);
+				filename = filename.replace(".mp4", "_" + activity.relevanceLevel + ".mp4");
+				
+				let dateFilename = filename.substr(filename.indexOf("_") + 1);
+				let year = dateFilename.substr(0, 4);
+				let month = dateFilename.substr(4, 2);
+				let day = dateFilename.substr(6, 2);
+				let datetime = year + month + day + dateFilename.substr(9, 4);
+				
+				let yearPath = combinePath(download_directory, year); 
+				let monthPath = combinePath(yearPath, month);
+				
+				let filepath = path.join(monthPath, filename);
+				switch (activity.relevanceLevel) {
+					case 0:
+						let levelPath = combinePath(monthPath, "low");
+						
+						filepath = path.join(levelPath, filename);
+						break;
+					case 1:
+						filepath = path.join(monthPath, filename);
+						break;
+				}
+				
+				
                 save_stream(filepath, stream);
+				exec('touch -t ' + datetime + ' ' + filepath);				
                 db.get('downloadedActivities').push(activity.activityId).write();
-
             }
-            
-
         }
 
     }
