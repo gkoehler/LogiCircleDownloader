@@ -1,6 +1,6 @@
 # LogiCircleDownloader
 
-Usage: Tired of using circle.logi.com to see your clips? Want to keep a local archive, but don't want to pay for a cloud storage subscription? Call this script to download the individual clips from the command line.
+Usage: Tired of using circle.logi.com to see your clips? Want to keep a local archive, automatically? Call this script to download the individual clips from the command line.
 
 Installation:
 
