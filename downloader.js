@@ -10,7 +10,8 @@ const authorize = async (user) => {
         method: 'POST',
         headers: {
             'Accept': 'application/json, text/plain, */*',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Origin': 'https://circle.logi.com'
         },
         body: JSON.stringify(user)
     });
@@ -25,7 +26,8 @@ const get_accessories = async (sessionCookie) => {
         headers: {
             'Accept': 'application/json, text/plain, */*',
             'Content-Type': 'application/json',
-            'Cookie': sessionCookie
+            'Cookie': sessionCookie,
+            'Origin': 'https://circle.logi.com'
         }
     })
     .then(response => response.json());
@@ -39,7 +41,8 @@ const get_activities = async (accessory, sessionCookie) => {
         headers: {
             'Accept': 'application/json, text/plain, */*',
             'Content-Type': 'application/json',
-            'Cookie': sessionCookie
+            'Cookie': sessionCookie,
+            'Origin': 'https://circle.logi.com'
         },
         body: JSON.stringify({
             "extraFields": [
@@ -61,7 +64,8 @@ const download_activity = async(accessory, activity, sessionCookie) => {
 
     return await fetch(url, {
         headers: {
-            'Cookie': sessionCookie
+            'Cookie': sessionCookie,
+            'Origin': 'https://circle.logi.com'
         }
     }).then(response => {
         let contentDisposition = response.headers.get('content-disposition');
