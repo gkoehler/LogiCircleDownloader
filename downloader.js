@@ -126,12 +126,10 @@ const run = async() => {
 				let filepath = path.join(monthPath, filename);
 				switch (activity.relevanceLevel) {
 					case 0:
-						let levelPath = combinePath(monthPath, "low");
-						
-						filepath = path.join(levelPath, filename);
+						filepath = path.join(combinePath(monthPath, "low"), filename);
 						break;
 					case 1:
-						filepath = path.join(monthPath, filename);
+						filepath = path.join(combinePath(monthPath, "high"), filename);
 						break;
 				}
 				
