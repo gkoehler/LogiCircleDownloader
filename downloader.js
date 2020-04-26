@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const low = require('lowdb')
 const FileAsync = require('lowdb/adapters/FileAsync')
 const path = require('path');
+const settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
 
 const authorize = async (user) => {
     let authResponse = await fetch('https://video.logi.com/api/accounts/authorization', {
@@ -97,22 +98,54 @@ const run = async() => {
 
     for(accessory of accessories) {
 
-        let activities = await get_activities(accessory, sessionCookie);
+        if(settings.devices.length > 0 && !(settings.devices.includes(accessory.accessoryId))) {
+
+            debug('Skipping accessory ', accessory.accessoryId);
+
+        } else {
+
+            let activities = await get_activities(accessory, sessionCookie);
         
-        for(activity of activities) {
+            for(activity of activities) {
+    
+                let found = db.get('downloadedActivities').indexOf(activity.activityId) > -1;
+    
+                if(!found && activity.relevanceLevel >= settings.relevanceThreshold) {
 
-            let found = db.get('downloadedActivities').indexOf(activity.activityId) > -1;
+                    let [filename, stream] = await download_activity(accessory, activity, sessionCookie);
 
-            if(!found) {
+                    let dir = download_directory;
 
-                let [filename, stream] = await download_activity(accessory, activity, sessionCookie);
-                let filepath = path.join(download_directory, filename);
-                save_stream(filepath, stream);
-                db.get('downloadedActivities').push(activity.activityId).write();
+                    if(settings.dateFolders){
+                        let activityDate = new Date(activity.startTime);
+                        let date = activityDate.getFullYear() + '-' + (activityDate.getMonth() + 1 ) + '-' + activityDate.getDate();
+        
+                        if (!fs.existsSync(path.join(download_directory, date))) {
+                            fs.mkdirSync(path.join(download_directory, date));
+                        }
 
+                        dir = path.join(download_directory, date);
+                    }
+
+                    if(settings.deviceFolders){
+                        let pathWithDevice = path.join(dir, accessory.name);
+
+                        if (!fs.existsSync(pathWithDevice)) {
+                            fs.mkdirSync(path.join(pathWithDevice));
+                        }
+
+                        dir = pathWithDevice;
+                    }
+
+                    let filepath = path.join(dir, filename);
+                    
+                    save_stream(filepath, stream);
+                    db.get('downloadedActivities').push(activity.activityId).write();
+    
+                }
+                
             }
-            
-
+    
         }
 
     }
