@@ -1,6 +1,6 @@
 {
     "devices": [],
     "deviceFolders": false,
-    "dateFolders": true,
+    "dateFolders": false,
     "relevanceThreshold": 0
 }

@@ -112,8 +112,6 @@ const run = async() => {
         } else {
 
             let activities = await get_activities(accessory, sessionCookie);
-
-            console.log(`${activities.length} activities found`);
         
             for(activity of activities) {
     
