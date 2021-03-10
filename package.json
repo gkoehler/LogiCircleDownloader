@@ -5,9 +5,9 @@
   "dependencies": {
     "debug": "^3.0.1",
     "filesize": "^3.5.10",
+    "lowdb": "^1.0.0",
     "node-fetch": "^1.7.3",
-    "progress-stream": "^2.0.0",
-    "lowdb": "^1.0.0"
+    "progress-stream": "^2.0.0"
   },
   "private": true
 }
