@@ -1,6 +1,15 @@
 {
     "devices": [],
-    "deviceFolders": false,
-    "dateFolders": false,
-    "relevanceThreshold": 0
+	"activities": {
+		"download": true,
+		"deviceFolders": true,
+		"dateFolders": true,
+		"relevanceThreshold": 0
+	},
+	"daybrief": {
+		"download": true,
+		"deviceFolders": true,
+		"dateFolders": false,
+		"dayOffset": -1
+	}
 }
