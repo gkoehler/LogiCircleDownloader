@@ -173,21 +173,21 @@ const downloadDayBrief = async(accessory, sessionCookie) => {
             if(settings.daybrief.dateFolders){
                 let date = dateToString(yesterday);
 
-				if (!fs.existsSync(path.join(download_directory, date))) {
-					fs.mkdirSync(path.join(download_directory, date));
-				}
+                if (!fs.existsSync(path.join(download_directory, date))) {
+                    fs.mkdirSync(path.join(download_directory, date));
+                }
 
-				dir = path.join(download_directory, date);
+                dir = path.join(download_directory, date);
             }
 
             if(settings.daybrief.deviceFolders){
                 let pathWithDevice = path.join(dir, accessory.name);
 
-				if (!fs.existsSync(pathWithDevice)) {
-					fs.mkdirSync(path.join(pathWithDevice));
-				}
+                if (!fs.existsSync(pathWithDevice)) {
+                    fs.mkdirSync(path.join(pathWithDevice));
+                }
 
-				dir = pathWithDevice;
+                dir = pathWithDevice;
             }
 
             let filepath = path.join(dir, filename);
@@ -251,11 +251,27 @@ const run = async() => {
 
                             dir = pathWithDevice;
                         }
+                        switch (activity.relevanceLevel) {
+                            case 0:
+								let lowPath = path.join(dir, "low");
+								if (!fs.existsSync(lowPath)) {
+                                    fs.mkdirSync(path.join(lowPath));
+                                }
+                                dir = lowPath;
+                                break;
+                            case 1:
+							    let highPath = path.join(dir, "high");
+								if (!fs.existsSync(highPath)) {
+                                    fs.mkdirSync(path.join(highPath));
+                                }
+                                dir = highPath;
+                                break;
+                        }
 
                         let filepath = path.join(dir, filename);
                         
                         save_stream(filepath, stream);
-                        db.get('downloadedActivities').push(activity.activityId).write();
+						db.get('downloadedActivities').push(activity.activityId).write();
                     }
                 }
             }
