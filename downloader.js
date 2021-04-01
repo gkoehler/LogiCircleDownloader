@@ -35,28 +35,35 @@ const get_accessories = async (sessionCookie) => {
 };
 
 const get_activities = async (accessory, sessionCookie) => {
+    let activitiesList = [];
+    let activitiesResponse = { nextStartTime: null };
 
-    let activitiesResponse = await fetch(`https://video.logi.com/api/accessories/${accessory.accessoryId}/activities`, 
-    {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json, text/plain, */*',
-            'Content-Type': 'application/json',
-            'Cookie': sessionCookie,
-            'Origin': 'https://circle.logi.com'
-        },
-        body: JSON.stringify({
-            "extraFields": [
-                "activitySet"
-            ],
-            "operator": "<=",
-            "limit": 80,
-            "scanDirectionNewer": true,
-            "filter": "relevanceLevel = 0 OR relevanceLevel >= 1"
-        })
-    }).then(response => response.json());
+    do {
+        activitiesResponse = await fetch(`https://video.logi.com/api/accessories/${accessory.accessoryId}/activities`, 
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+                'Cookie': sessionCookie,
+                'Origin': 'https://circle.logi.com'
+            },
+            body: JSON.stringify({
+                "extraFields": [
+                    "activitySet"
+                ],
+                "operator": "<=",
+                "limit": 80,
+                "scanDirectionNewer": true,
+                "startActivityId": activitiesResponse.nextStartTime,
+            })
+        }).then(response => response.json());
 
-    return activitiesResponse.activities;
+        activitiesList.push(...activitiesResponse.activities);
+    }
+    while(activitiesResponse.nextStartTime)
+
+    return activitiesList;
 };
 
 const download_activity = async(accessory, activity, sessionCookie) => {
