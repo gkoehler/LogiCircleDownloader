@@ -1,6 +1,7 @@
 {
     "devices": [],
     "deviceFolders": false,
-    "dateFolders": false,
-    "relevanceThreshold": 0
+    "dateFolders": true,
+    "relevanceThreshold": 0,
+    "downloadDirectory": "./temp/videos"
 }

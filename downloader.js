@@ -5,21 +5,20 @@ const low = require('lowdb')
 const FileAsync = require('lowdb/adapters/FileAsync')
 const path = require('path');
 const settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+const puppeteer = require('puppeteer');
 
 const authorize = async (user) => {
-    let authResponse = await fetch('https://video.logi.com/api/accounts/authorization', {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json, text/plain, */*',
-            'Content-Type': 'application/json',
-            'Origin': 'https://circle.logi.com'
-        },
-        body: JSON.stringify(user)
-    });
+    const browser = await puppeteer.launch({ headless: false });
+    const page = await browser.newPage();
+    await page.goto('https://circle.logi.com/#/login');
 
-    let cookie = authResponse.headers.get('set-cookie');
-    let sessionCookie = cookie.match(/prod_session=[^;]+/)[0];
-    return sessionCookie;
+    page.setDefaultTimeout(0);
+    let response = await page.waitForResponse((res) => res.url() === 'https://accounts.logi.com/identity/oauth2/token' && res.status() === 200);
+    let json = await response.json();
+
+    await browser.close();
+    
+    return json.access_token;
 };
 
 const get_accessories = async (sessionCookie) => {
@@ -27,7 +26,7 @@ const get_accessories = async (sessionCookie) => {
         headers: {
             'Accept': 'application/json, text/plain, */*',
             'Content-Type': 'application/json',
-            'Cookie': sessionCookie,
+            'Authorization': 'LIDS ' + sessionCookie,
             'Origin': 'https://circle.logi.com'
         }
     })
@@ -45,7 +44,7 @@ const get_activities = async (accessory, sessionCookie) => {
             headers: {
                 'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json',
-                'Cookie': sessionCookie,
+                'Authorization': 'LIDS ' + sessionCookie,
                 'Origin': 'https://circle.logi.com'
             },
             body: JSON.stringify({
@@ -62,7 +61,7 @@ const get_activities = async (accessory, sessionCookie) => {
         activitiesList.push(...activitiesResponse.activities);
     }
     while(activitiesResponse.nextStartTime)
-
+      
     return activitiesList;
 };
 
@@ -72,7 +71,7 @@ const download_activity = async(accessory, activity, sessionCookie) => {
 
     return await fetch(url, {
         headers: {
-            'Cookie': sessionCookie,
+            'Authorization': 'LIDS ' + sessionCookie,
             'Origin': 'https://circle.logi.com'
         }
     }).then(response => {
@@ -94,7 +93,7 @@ const run = async() => {
         password: process.env.LOGI_PASS
     };
 
-    const download_directory = process.env.DOWNLOAD_DIRECTORY;
+    const download_directory = settings.downloadDirectory;
     const db = await low(new FileAsync('db.json'));
 
     await db.defaults({ downloadedActivities: [] }).write()
@@ -128,7 +127,7 @@ const run = async() => {
                         let date = activityDate.getFullYear() + '-' + (activityDate.getMonth() + 1 ) + '-' + activityDate.getDate();
         
                         if (!fs.existsSync(path.join(download_directory, date))) {
-                            fs.mkdirSync(path.join(download_directory, date));
+                            fs.mkdirSync(path.join(download_directory, date), { recursive: true });
                         }
 
                         dir = path.join(download_directory, date);
