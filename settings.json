@@ -3,5 +3,5 @@
     "deviceFolders": false,
     "dateFolders": true,
     "relevanceThreshold": 0,
-    "download_directory": "./temp/videos"
+    "downloadDirectory": "./temp/videos"
 }

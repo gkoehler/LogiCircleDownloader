@@ -86,7 +86,7 @@ const run = async() => {
         password: process.env.LOGI_PASS
     };
 
-    const download_directory = process.env.DOWNLOAD_DIRECTORY;
+    const download_directory = settings.downloadDirectory;
     const db = await low(new FileAsync('db.json'));
 
     await db.defaults({ downloadedActivities: [] }).write()
@@ -113,17 +113,17 @@ const run = async() => {
 
                     let [filename, stream] = await download_activity(accessory, activity, sessionCookie);
 
-                    let dir = settings.download_directory;
+                    let dir = download_directory;
 
                     if(settings.dateFolders){
                         let activityDate = new Date(activity.startTime);
                         let date = activityDate.getFullYear() + '-' + (activityDate.getMonth() + 1 ) + '-' + activityDate.getDate();
         
-                        if (!fs.existsSync(path.join(settings.download_directory, date))) {
-                            fs.mkdirSync(path.join(settings.download_directory, date), { recursive: true });
+                        if (!fs.existsSync(path.join(download_directory, date))) {
+                            fs.mkdirSync(path.join(download_directory, date), { recursive: true });
                         }
 
-                        dir = path.join(settings.download_directory, date);
+                        dir = path.join(download_directory, date);
                     }
 
                     if(settings.deviceFolders){
