@@ -5,9 +5,10 @@
   "dependencies": {
     "debug": "^3.0.1",
     "filesize": "^3.5.10",
-    "node-fetch": "^1.7.3",
+    "lowdb": "^1.0.0",
+    "node-fetch": "^2.6.1",
     "progress-stream": "^2.0.0",
-    "lowdb": "^1.0.0"
+    "puppeteer": "^9.1.1"
   },
   "private": true
 }
